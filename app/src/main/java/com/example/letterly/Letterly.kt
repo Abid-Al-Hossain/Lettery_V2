@@ -7,35 +7,52 @@ import androidx.recyclerview.widget.RecyclerView
 import android.view.MotionEvent
 import android.view.View
 import android.widget.LinearLayout
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class Letterly : AppCompatActivity() {
 
+    // --- Pattern Mode ---
     private lateinit var boxRecyclerView: RecyclerView
-    private lateinit var wordsRecyclerView: RecyclerView
     private lateinit var boxAdapter: BoxAdapter
-    private lateinit var wordAdapter: WordAdapter
     private val boxes = mutableListOf<Box>()
-    private val wordSuggestions = mutableListOf<Pair<String, String>>() // Pair of Word and Meaning
+    private lateinit var patternWordsRecyclerView: RecyclerView
+    private lateinit var patternWordAdapter: WordAdapter
+    private val patternSuggestions = mutableListOf<Pair<String, String>>()
 
+    // --- Dictionary Mode ---
+    private lateinit var dictResultsRecyclerView: RecyclerView
+    private lateinit var dictWordAdapter: WordAdapter
+    private val dictResults = mutableListOf<Pair<String, String>>()
+
+    // --- Rhyme Mode ---
+    private lateinit var rhymeResultsRecyclerView: RecyclerView
+    private lateinit var rhymeWordAdapter: WordAdapter
+    private val rhymeResults = mutableListOf<Pair<String, String>>()
+
+    // --- Concept Mode ---
+    private lateinit var conceptResultsRecyclerView: RecyclerView
+    private lateinit var conceptWordAdapter: WordAdapter
+    private val conceptResults = mutableListOf<Pair<String, String>>()
+
+    // --- Shared ---
     private lateinit var datamuseApi: DatamuseApi
+
+    // Panels
+    private lateinit var panelPattern: View
+    private lateinit var panelDictionary: View
+    private lateinit var panelRhyme: View
+    private lateinit var panelConcept: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_letterly)
-
-        val addBoxButton: Button = findViewById(R.id.addBoxButton)
-        val removeBoxButton: Button = findViewById(R.id.removeBoxButton)
-        val findWordsButton: Button = findViewById(R.id.findWordsButton)
-        boxRecyclerView = findViewById(R.id.recyclerView)
-        wordsRecyclerView = findViewById(R.id.wordsRecyclerView)
 
         // Initialize Retrofit
         val retrofit = Retrofit.Builder()
@@ -44,13 +61,66 @@ class Letterly : AppCompatActivity() {
             .build()
         datamuseApi = retrofit.create(DatamuseApi::class.java)
 
+        // Mode panels
+        panelPattern = findViewById(R.id.panelPattern)
+        panelDictionary = findViewById(R.id.panelDictionary)
+        panelRhyme = findViewById(R.id.panelRhyme)
+        panelConcept = findViewById(R.id.panelConcept)
+
+        setupTabs()
+        setupPatternMode()
+        setupDictionaryMode()
+        setupRhymeMode()
+        setupConceptMode()
+        setupResizableSections()
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // TABS (Mode Selection)
+    // ─────────────────────────────────────────────────────────────
+    private fun setupTabs() {
+        val tabLayout: TabLayout = findViewById(R.id.modeTabLayout)
+        tabLayout.addTab(tabLayout.newTab().setText("🔠 Pattern"))
+        tabLayout.addTab(tabLayout.newTab().setText("📖 Dictionary"))
+        tabLayout.addTab(tabLayout.newTab().setText("🎵 Rhyme"))
+        tabLayout.addTab(tabLayout.newTab().setText("💡 Concept"))
+
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                showPanel(tab.position)
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
+
+        // Show Pattern Mode by default
+        showPanel(0)
+    }
+
+    private fun showPanel(index: Int) {
+        panelPattern.visibility = if (index == 0) View.VISIBLE else View.GONE
+        panelDictionary.visibility = if (index == 1) View.VISIBLE else View.GONE
+        panelRhyme.visibility = if (index == 2) View.VISIBLE else View.GONE
+        panelConcept.visibility = if (index == 3) View.VISIBLE else View.GONE
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PATTERN MODE
+    // ─────────────────────────────────────────────────────────────
+    private fun setupPatternMode() {
+        val addBoxButton: View = findViewById(R.id.addBoxButton)
+        val removeBoxButton: View = findViewById(R.id.removeBoxButton)
+        val findWordsButton: View = findViewById(R.id.findWordsButton)
+        boxRecyclerView = findViewById(R.id.recyclerView)
+        patternWordsRecyclerView = findViewById(R.id.wordsRecyclerView)
+
         boxAdapter = BoxAdapter(boxes)
-        boxRecyclerView.layoutManager = GridLayoutManager(this,2)
+        boxRecyclerView.layoutManager = GridLayoutManager(this, 2)
         boxRecyclerView.adapter = boxAdapter
 
-        wordAdapter = WordAdapter(wordSuggestions)
-        wordsRecyclerView.layoutManager = LinearLayoutManager(this)
-        wordsRecyclerView.adapter = wordAdapter
+        patternWordAdapter = WordAdapter(patternSuggestions)
+        patternWordsRecyclerView.layoutManager = LinearLayoutManager(this)
+        patternWordsRecyclerView.adapter = patternWordAdapter
 
         addBoxButton.setOnClickListener {
             boxes.add(Box())
@@ -59,29 +129,182 @@ class Letterly : AppCompatActivity() {
 
         removeBoxButton.setOnClickListener {
             if (boxes.isNotEmpty()) {
-                val removedIndex = boxes.size - 1
-                boxes.removeAt(removedIndex)
-                boxAdapter.notifyItemRemoved(removedIndex)
+                val idx = boxes.size - 1
+                boxes.removeAt(idx)
+                boxAdapter.notifyItemRemoved(idx)
             }
         }
 
-        val searchWordButton: Button = findViewById(R.id.searchWordButton)
-        val searchWordEditText: EditText = findViewById(R.id.searchWordEditText)
+        findWordsButton.setOnClickListener { findWordsFromApi() }
+    }
 
-        searchWordButton.setOnClickListener {
-            val word = searchWordEditText.text.toString().trim()
-            if (word.isNotEmpty()) {
-                searchSingleWord(word)
-            } else {
-                Toast.makeText(this, "Please enter a word to search", Toast.LENGTH_SHORT).show()
+    private fun findWordsFromApi() {
+        if (boxes.isEmpty()) {
+            Toast.makeText(this, "Please add at least one box", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val wordLength = boxes.size
+        val wildcardSuffix = "?".repeat(wordLength - 1)
+
+        lifecycleScope.launch {
+            try {
+                patternSuggestions.clear()
+                patternWordAdapter.notifyDataSetChanged()
+                var totalFound = 0
+
+                for (startLetter in 'a'..'z') {
+                    val pattern = "$startLetter$wildcardSuffix"
+                    try {
+                        val results = datamuseApi.findWords(spelledLike = pattern, max = 1000)
+                        val filtered = results.filter { dw ->
+                            val word = dw.word.lowercase()
+                            if (word.length != wordLength) return@filter false
+                            boxes.indices.all { index ->
+                                val box = boxes[index]
+                                val letterAtPos = word[index].toString()
+                                if (box.includeLetter.isNotEmpty()) {
+                                    val includes = box.includeLetter.split(",").map { it.trim().lowercase() }
+                                    if (!includes.contains(letterAtPos)) return@all false
+                                }
+                                if (box.excludeLetters.isNotEmpty()) {
+                                    val excludes = box.excludeLetters.split(",").map { it.trim().lowercase() }
+                                    if (excludes.contains(letterAtPos)) return@all false
+                                }
+                                true
+                            }
+                        }
+                        if (filtered.isNotEmpty()) {
+                            val formatted = filtered.distinctBy { it.word }.sortedBy { it.word }
+                                .map { formatResult(it) }
+                            val startIdx = patternSuggestions.size
+                            patternSuggestions.addAll(formatted)
+                            totalFound += formatted.size
+                            patternWordAdapter.notifyItemRangeInserted(startIdx, formatted.size)
+                        }
+                    } catch (_: Exception) {}
+                }
+                if (totalFound == 0) Toast.makeText(this@Letterly, "No matching words found", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
+    }
 
-        findWordsButton.setOnClickListener {
-            findWordsFromApi()
+    // ─────────────────────────────────────────────────────────────
+    // DICTIONARY MODE
+    // ─────────────────────────────────────────────────────────────
+    private fun setupDictionaryMode() {
+        dictResultsRecyclerView = findViewById(R.id.dictResultsRecyclerView)
+        dictWordAdapter = WordAdapter(dictResults)
+        dictResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        dictResultsRecyclerView.adapter = dictWordAdapter
+
+        val searchEditText: TextInputEditText = findViewById(R.id.dictSearchEditText)
+        val searchButton: View = findViewById(R.id.dictSearchButton)
+
+        searchButton.setOnClickListener {
+            val word = searchEditText.text.toString().trim()
+            if (word.isNotEmpty()) lookupWord(word)
+            else Toast.makeText(this, "Please enter a word", Toast.LENGTH_SHORT).show()
         }
+    }
 
-        setupResizableSections()
+    private fun lookupWord(word: String) {
+        lifecycleScope.launch {
+            try {
+                val results = datamuseApi.lookupWord(word = word.lowercase(), max = 1)
+                dictResults.clear()
+                if (results.isNotEmpty()) {
+                    dictResults.add(formatResult(results[0]))
+                } else {
+                    Toast.makeText(this@Letterly, "Word not found", Toast.LENGTH_SHORT).show()
+                }
+                dictWordAdapter.notifyDataSetChanged()
+            } catch (e: Exception) {
+                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // RHYME MODE
+    // ─────────────────────────────────────────────────────────────
+    private fun setupRhymeMode() {
+        rhymeResultsRecyclerView = findViewById(R.id.rhymeResultsRecyclerView)
+        rhymeWordAdapter = WordAdapter(rhymeResults)
+        rhymeResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        rhymeResultsRecyclerView.adapter = rhymeWordAdapter
+
+        val searchEditText: TextInputEditText = findViewById(R.id.rhymeSearchEditText)
+        val searchButton: View = findViewById(R.id.rhymeSearchButton)
+
+        searchButton.setOnClickListener {
+            val word = searchEditText.text.toString().trim()
+            if (word.isNotEmpty()) findRhymes(word)
+            else Toast.makeText(this, "Please enter a word", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun findRhymes(word: String) {
+        lifecycleScope.launch {
+            try {
+                val results = datamuseApi.findRhymes(word = word.lowercase(), max = 100)
+                rhymeResults.clear()
+                if (results.isNotEmpty()) {
+                    rhymeResults.addAll(results.map { formatResult(it) })
+                } else {
+                    Toast.makeText(this@Letterly, "No rhymes found", Toast.LENGTH_SHORT).show()
+                }
+                rhymeWordAdapter.notifyDataSetChanged()
+            } catch (e: Exception) {
+                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CONCEPT MODE
+    // ─────────────────────────────────────────────────────────────
+    private fun setupConceptMode() {
+        conceptResultsRecyclerView = findViewById(R.id.conceptResultsRecyclerView)
+        conceptWordAdapter = WordAdapter(conceptResults)
+        conceptResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        conceptResultsRecyclerView.adapter = conceptWordAdapter
+
+        val searchEditText: TextInputEditText = findViewById(R.id.conceptSearchEditText)
+        val searchButton: View = findViewById(R.id.conceptSearchButton)
+
+        searchButton.setOnClickListener {
+            val concept = searchEditText.text.toString().trim()
+            if (concept.isNotEmpty()) findByConcept(concept)
+            else Toast.makeText(this, "Please describe the concept", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun findByConcept(concept: String) {
+        lifecycleScope.launch {
+            try {
+                val results = datamuseApi.findByMeaning(concept = concept.lowercase(), max = 100)
+                conceptResults.clear()
+                if (results.isNotEmpty()) {
+                    conceptResults.addAll(results.map { formatResult(it) })
+                } else {
+                    Toast.makeText(this@Letterly, "No matching words found", Toast.LENGTH_SHORT).show()
+                }
+                conceptWordAdapter.notifyDataSetChanged()
+            } catch (e: Exception) {
+                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SHARED HELPERS
+    // ─────────────────────────────────────────────────────────────
+    private fun formatResult(dw: DatamuseWord): Pair<String, String> {
+        val rawDef = dw.definitions?.firstOrNull() ?: "No definition found"
+        val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
+        return dw.word.uppercase() to definition
     }
 
     private fun setupResizableSections() {
@@ -91,31 +314,20 @@ class Letterly : AppCompatActivity() {
 
         dragHandle.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_MOVE) {
-                val parent = v.parent as View
                 val totalHeight = topCard.height + bottomCard.height
-                
-                // Get touch position relative to the combined sections
                 val rawY = event.rawY
                 val location = IntArray(2)
                 topCard.getLocationOnScreen(location)
-                val topY = location[1]
-                
-                val relativeY = rawY - topY
-                
-                // Calculate new weights (ensure a minimum height for each)
-                val minHeight = 100 // pixels
+                val relativeY = rawY - location[1]
+                val minHeight = 100
                 if (relativeY > minHeight && relativeY < (totalHeight - minHeight)) {
                     val topWeight = relativeY / totalHeight.toFloat()
                     val bottomWeight = (totalHeight - relativeY) / totalHeight.toFloat()
-                    
-                    // Total weight should be 2.0 to maintain original layout ratio roughly
                     val totalWeight = 2.0f
                     val topParams = topCard.layoutParams as LinearLayout.LayoutParams
                     val bottomParams = bottomCard.layoutParams as LinearLayout.LayoutParams
-                    
                     topParams.weight = topWeight * totalWeight
                     bottomParams.weight = bottomWeight * totalWeight
-                    
                     topCard.layoutParams = topParams
                     bottomCard.layoutParams = bottomParams
                 }
@@ -126,106 +338,6 @@ class Letterly : AppCompatActivity() {
             }
         }
     }
-
-    private fun findWordsFromApi() {
-        if (boxes.isEmpty()) {
-            Toast.makeText(this, "Please add at least one box", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val wordLength = boxes.size
-        val wildcardSuffix = "?".repeat(wordLength - 1)
-
-        lifecycleScope.launch {
-            try {
-                wordSuggestions.clear()
-                wordAdapter.notifyDataSetChanged()
-
-                var totalFound = 0
-
-                // Iterate through the alphabet sequentially
-                for (startLetter in 'a'..'z') {
-                    val pattern = "$startLetter$wildcardSuffix"
-                    try {
-                        val results = datamuseApi.findWords(spelledLike = pattern, max = 1000)
-
-                        // Filter results for this letter
-                        val filteredForLetter = results.filter { dw ->
-                            val word = dw.word.lowercase()
-                            if (word.length != wordLength) return@filter false
-
-                            boxes.indices.all { index ->
-                                val box = boxes[index]
-                                val letterAtPos = word[index].toString()
-
-                                if (box.includeLetter.isNotEmpty()) {
-                                    val includeLetters = box.includeLetter.split(",").map { it.trim().lowercase() }
-                                    if (!includeLetters.contains(letterAtPos)) return@all false
-                                }
-
-                                if (box.excludeLetters.isNotEmpty()) {
-                                    val excludeLetters = box.excludeLetters.split(",").map { it.trim().lowercase() }
-                                    if (excludeLetters.contains(letterAtPos)) return@all false
-                                }
-
-                                true
-                            }
-                        }
-
-                        if (filteredForLetter.isNotEmpty()) {
-                            // Format and append the new matches
-                            val formattedMatches = filteredForLetter
-                                .distinctBy { it.word }
-                                .sortedBy { it.word }
-                                .map {
-                                    val rawDef = it.definitions?.firstOrNull() ?: "No definition found"
-                                    val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
-                                    it.word.uppercase() to definition
-                                }
-
-                            val startIdx = wordSuggestions.size
-                            wordSuggestions.addAll(formattedMatches)
-                            totalFound += formattedMatches.size
-                            wordAdapter.notifyItemRangeInserted(startIdx, formattedMatches.size)
-                        }
-                    } catch (e: Exception) {
-                    }
-                }
-
-                if (totalFound == 0) {
-                    Toast.makeText(this@Letterly, "No matching words found", Toast.LENGTH_SHORT).show()
-                }
-
-            } catch (e: Exception) {
-                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun searchSingleWord(word: String) {
-        lifecycleScope.launch {
-            try {
-                // Search for the exact word
-                val results = datamuseApi.findWords(spelledLike = word.lowercase(), max = 1)
-
-                wordSuggestions.clear()
-                if (results.isNotEmpty()) {
-                    val it = results[0]
-                    val rawDef = it.definitions?.firstOrNull() ?: "No definition found"
-                    val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
-                    wordSuggestions.add(it.word.uppercase() to definition)
-                } else {
-                    Toast.makeText(this@Letterly, "Word not found", Toast.LENGTH_SHORT).show()
-                }
-                wordAdapter.notifyDataSetChanged()
-
-            } catch (e: Exception) {
-                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-
 }
 
 data class Box(var includeLetter: String = "", var excludeLetters: String = "")
