@@ -72,62 +72,67 @@ class Letterly : AppCompatActivity() {
             return
         }
 
-        // Build the wildcard suffix: the "?" placeholder for each box after the first
-        // We'll make 26 calls (a??, b??, c?? etc.) so we get full alphabet coverage
         val wordLength = boxes.size
-        val wildcardSuffix = "?".repeat(wordLength - 1) // e.g., for 3 boxes → "??"
+        val wildcardSuffix = "?".repeat(wordLength - 1)
 
         lifecycleScope.launch {
             try {
-                // Fire 26 parallel calls, one per starting letter, and merge results
-                val allResults = ('a'..'z').flatMap { startLetter ->
-                    val pattern = "$startLetter$wildcardSuffix" // e.g. "a??" for 3-letter words
-                    try {
-                        datamuseApi.findWords(spelledLike = pattern, max = 1000)
-                    } catch (e: Exception) {
-                        emptyList()
-                    }
-                }
-
-                // Client-side filtering — identical to original local dictionary logic
-                val filteredResults = allResults.filter { dw ->
-                    val word = dw.word.lowercase()
-                    if (word.length != wordLength) return@filter false
-
-                    boxes.indices.all { index ->
-                        val box = boxes[index]
-                        val letterAtPos = word[index].toString()
-
-                        // Mirror original: includeLetter — position must match one of the listed letters
-                        if (box.includeLetter.isNotEmpty()) {
-                            val includeLetters = box.includeLetter.split(",").map { it.trim().lowercase() }
-                            if (!includeLetters.contains(letterAtPos)) return@all false
-                        }
-
-                        // Mirror original: excludeLetters — position must NOT match any listed letter
-                        if (box.excludeLetters.isNotEmpty()) {
-                            val excludeLetters = box.excludeLetters.split(",").map { it.trim().lowercase() }
-                            if (excludeLetters.contains(letterAtPos)) return@all false
-                        }
-
-                        true
-                    }
-                }
-
                 wordSuggestions.clear()
-                wordSuggestions.addAll(
-                    filteredResults
-                        .distinctBy { it.word } // remove duplicates from overlapping API results
-                        .sortedBy { it.word }    // alphabetical order, matching original JSON structure
-                        .map {
-                            val rawDef = it.definitions?.firstOrNull() ?: "No definition found"
-                            val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
-                            it.word.uppercase() to definition // uppercase to match original JSON keys
-                        }
-                )
                 wordAdapter.notifyDataSetChanged()
 
-                if (wordSuggestions.isEmpty()) {
+                var totalFound = 0
+
+                // Iterate through the alphabet sequentially
+                for (startLetter in 'a'..'z') {
+                    val pattern = "$startLetter$wildcardSuffix"
+                    try {
+                        val results = datamuseApi.findWords(spelledLike = pattern, max = 1000)
+
+                        // Filter results for this letter
+                        val filteredForLetter = results.filter { dw ->
+                            val word = dw.word.lowercase()
+                            if (word.length != wordLength) return@filter false
+
+                            boxes.indices.all { index ->
+                                val box = boxes[index]
+                                val letterAtPos = word[index].toString()
+
+                                if (box.includeLetter.isNotEmpty()) {
+                                    val includeLetters = box.includeLetter.split(",").map { it.trim().lowercase() }
+                                    if (!includeLetters.contains(letterAtPos)) return@all false
+                                }
+
+                                if (box.excludeLetters.isNotEmpty()) {
+                                    val excludeLetters = box.excludeLetters.split(",").map { it.trim().lowercase() }
+                                    if (excludeLetters.contains(letterAtPos)) return@all false
+                                }
+
+                                true
+                            }
+                        }
+
+                        if (filteredForLetter.isNotEmpty()) {
+                            // Format and append the new matches
+                            val formattedMatches = filteredForLetter
+                                .distinctBy { it.word }
+                                .sortedBy { it.word }
+                                .map {
+                                    val rawDef = it.definitions?.firstOrNull() ?: "No definition found"
+                                    val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
+                                    it.word.uppercase() to definition
+                                }
+
+                            val startIdx = wordSuggestions.size
+                            wordSuggestions.addAll(formattedMatches)
+                            totalFound += formattedMatches.size
+                            wordAdapter.notifyItemRangeInserted(startIdx, formattedMatches.size)
+                        }
+                    } catch (e: Exception) {
+                        // Skip errors for individual letters to keep the flow going
+                    }
+                }
+
+                if (totalFound == 0) {
                     Toast.makeText(this@Letterly, "No matching words found", Toast.LENGTH_SHORT).show()
                 }
 
