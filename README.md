@@ -4,15 +4,22 @@
 Letterly is a powerful Android dictionary and word-finding tool designed to help users discover words based on specific patterns and constraints. Whether you're solving puzzles, expanding your vocabulary, or looking for writing inspiration, Letterly provides exhaustive, real-time suggestions powered by the cloud.
 
 ## Features
-- **4 Search Modes**:
-  - **🔠 Pattern Mode**: Discover words matching specific patterns using addable letter boxes with inclusive and exclusive filters.
-  - **📖 Dictionary Mode**: Quick lookup for any word's definition.
-  - **🎵 Rhyme Mode**: Find perfect rhymes for any given word.
-  - **💡 Concept Mode**: Reverse-dictionary search to find words based on concepts or descriptions.
-- **Resizable Interface**: Draggable divider between input and results sections for optimized workspace.
-- **Improved Coverage**: Uses 26 parallel API calls for pattern matching to ensure exhaustive results.
-- **Cloud-Powered Vocabulary**: Real-time integration with the Datamuse API for millions of terms.
-- **Clean Definitions**: Direct, easy-to-read meanings without technical clutter.
+- **14 Search Modes (API Superpowers)**:
+  - **🔠 Pattern**: Exhaustive pattern matching using custom boxes and and multi-thread API synthesis.
+  - **📖 Dictionary**: Instant lookup for meanings.
+  - **🎵 Rhyme**: Perfect phonetic rhymes.
+  - **💡 Concept**: Reverse-dictionary search (Ideas -> Words).
+  - **👯 Synonym/Antonym**: Similar and opposite meanings.
+  - **👂 Sound-Alike**: Phonetic search for spelling-agnostic results.
+  - **👯 Homophone**: Find words that sound identical.
+  - **🎨 Adjectives/Nouns**: Descriptors and modified nouns.
+  - **🎶 Consonant**: Alliteration helper and consonant matching.
+  - **➡️ Followers/Predecessors**: Contextual word prediction (Bigrams).
+  - **🔫 Trigger**: Associated concepts and text triggers.
+- **Dynamic Instruction System**: Every mode includes a real-time **Description Card** explaining exactly what it does and how to use it.
+- **Resizable Interface**: Draggable divider for a custom-sized workspace.
+- **Improved Performance**: Consolidated UI logic for lightweight, high-speed word discovery.
+- **Cloud-Powered Vocabulary**: Millions of terms via real-time Datamuse API integration.
 
 ## 🚀 Getting Started
 

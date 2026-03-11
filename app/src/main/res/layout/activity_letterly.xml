@@ -123,24 +123,61 @@
     </LinearLayout>
 
     <!-- ======================= -->
-    <!-- DICTIONARY MODE PANEL -->
+    <!-- GENERIC MODE PANEL (For all 17 other modes) -->
     <!-- ======================= -->
     <LinearLayout
-        android:id="@+id/panelDictionary"
+        android:id="@+id/panelGeneric"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:visibility="gone">
 
+        <!-- Mode Description Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="8dp"
+            app:cardBackgroundColor="#F8F9FA">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/modeDescriptionTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="About this mode"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/modeDescriptionContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mode description goes here..."
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:lineSpacingExtra="2dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/genericInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:hint="Enter a word to look up"
+            android:hint="Search..."
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/dictSearchEditText"
+                android:id="@+id/genericSearchEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
@@ -148,11 +185,11 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/dictSearchButton"
+            android:id="@+id/genericSearchButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:text="Look Up Definition"
+            android:text="Search"
             android:textAllCaps="false"
             android:textSize="15sp" />
 
@@ -164,106 +201,7 @@
             app:cardCornerRadius="8dp">
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/dictResultsRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="8dp" />
-        </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
-
-    <!-- ======================= -->
-    <!-- RHYME MODE PANEL -->
-    <!-- ======================= -->
-    <LinearLayout
-        android:id="@+id/panelRhyme"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:hint="Enter a word to find rhymes"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/rhymeSearchEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text"
-                android:imeOptions="actionSearch" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/rhymeSearchButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:text="Find Rhymes"
-            android:textAllCaps="false"
-            android:textSize="15sp" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="8dp">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rhymeResultsRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="8dp" />
-        </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
-
-    <!-- ======================= -->
-    <!-- CONCEPT MODE PANEL -->
-    <!-- ======================= -->
-    <LinearLayout
-        android:id="@+id/panelConcept"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:hint='Describe what you mean (e.g. "fear of spiders")'
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/conceptSearchEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textMultiLine"
-                android:minLines="2"
-                android:imeOptions="actionSearch" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/conceptSearchButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:text="Find the Word"
-            android:textAllCaps="false"
-            android:textSize="15sp" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="8dp">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/conceptResultsRecyclerView"
+                android:id="@+id/genericResultsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="8dp" />
