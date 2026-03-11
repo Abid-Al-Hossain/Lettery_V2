@@ -5,15 +5,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    android:padding="16dp"
     tools:context=".Letterly">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="16dp">
 
-<!--        &lt;!&ndash; Toolbar for a professional look &ndash;&gt;-->
 <!--        <com.google.android.material.appbar.MaterialToolbar-->
 <!--            android:id="@+id/toolbar"-->
 <!--            android:layout_width="match_parent"-->
@@ -23,6 +23,41 @@
 <!--            android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"-->
 <!--            app:title="Letterly"-->
 <!--            app:titleTextColor="@android:color/white" />-->
+
+        <!-- Direct Word Search Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:hint="Search Word"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/searchWordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/searchWordButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lookup"
+                android:textAllCaps="false"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
 
         <!-- Add Box and Remove Box buttons -->
         <LinearLayout
@@ -57,11 +92,12 @@
 
         <!-- RecyclerView for added boxes -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/topSectionCard"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="4dp"
             app:cardElevation="4dp"
             app:cardCornerRadius="8dp">
 
@@ -72,23 +108,47 @@
                 android:padding="8dp" />
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Draggable Handle Divider -->
+        <LinearLayout
+            android:id="@+id/dragHandle"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="?android:attr/selectableItemBackground">
+            
+            <View
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:background="#CCCCCC"
+                android:backgroundTint="@color/material_on_surface_stroke"
+                android:alpha="0.5" />
+        </LinearLayout>
+
+        <!-- Find Words Button (Moved slightly to keep it accessible or stationary?) 
+             Actually, keeping it outside the resizable blocks or inside one? 
+             The user said 'two scrollable section'. Let's keep the button between them or below.
+             Current layout has Button above the words list. Let's keep it there for now. -->
+
         <!-- Find Words Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/findWordsButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:padding="12dp"
+            android:layout_margin="4dp"
+            android:padding="10dp"
             android:text="Find Words"
             android:textAllCaps="false"
-            android:textSize="16sp" />
+            android:textSize="14sp" />
 
         <!-- RecyclerView for word suggestions -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/bottomSectionCard"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"
             app:cardElevation="4dp"
             app:cardCornerRadius="8dp">

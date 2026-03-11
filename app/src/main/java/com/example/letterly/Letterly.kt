@@ -4,7 +4,11 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.view.MotionEvent
+import android.view.View
+import android.widget.LinearLayout
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -61,8 +65,65 @@ class Letterly : AppCompatActivity() {
             }
         }
 
+        val searchWordButton: Button = findViewById(R.id.searchWordButton)
+        val searchWordEditText: EditText = findViewById(R.id.searchWordEditText)
+
+        searchWordButton.setOnClickListener {
+            val word = searchWordEditText.text.toString().trim()
+            if (word.isNotEmpty()) {
+                searchSingleWord(word)
+            } else {
+                Toast.makeText(this, "Please enter a word to search", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         findWordsButton.setOnClickListener {
             findWordsFromApi()
+        }
+
+        setupResizableSections()
+    }
+
+    private fun setupResizableSections() {
+        val dragHandle: View = findViewById(R.id.dragHandle)
+        val topCard: View = findViewById(R.id.topSectionCard)
+        val bottomCard: View = findViewById(R.id.bottomSectionCard)
+
+        dragHandle.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_MOVE) {
+                val parent = v.parent as View
+                val totalHeight = topCard.height + bottomCard.height
+                
+                // Get touch position relative to the combined sections
+                val rawY = event.rawY
+                val location = IntArray(2)
+                topCard.getLocationOnScreen(location)
+                val topY = location[1]
+                
+                val relativeY = rawY - topY
+                
+                // Calculate new weights (ensure a minimum height for each)
+                val minHeight = 100 // pixels
+                if (relativeY > minHeight && relativeY < (totalHeight - minHeight)) {
+                    val topWeight = relativeY / totalHeight.toFloat()
+                    val bottomWeight = (totalHeight - relativeY) / totalHeight.toFloat()
+                    
+                    // Total weight should be 2.0 to maintain original layout ratio roughly
+                    val totalWeight = 2.0f
+                    val topParams = topCard.layoutParams as LinearLayout.LayoutParams
+                    val bottomParams = bottomCard.layoutParams as LinearLayout.LayoutParams
+                    
+                    topParams.weight = topWeight * totalWeight
+                    bottomParams.weight = bottomWeight * totalWeight
+                    
+                    topCard.layoutParams = topParams
+                    bottomCard.layoutParams = bottomParams
+                }
+                true
+            } else {
+                v.performClick()
+                true
+            }
         }
     }
 
@@ -128,13 +189,35 @@ class Letterly : AppCompatActivity() {
                             wordAdapter.notifyItemRangeInserted(startIdx, formattedMatches.size)
                         }
                     } catch (e: Exception) {
-                        // Skip errors for individual letters to keep the flow going
                     }
                 }
 
                 if (totalFound == 0) {
                     Toast.makeText(this@Letterly, "No matching words found", Toast.LENGTH_SHORT).show()
                 }
+
+            } catch (e: Exception) {
+                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun searchSingleWord(word: String) {
+        lifecycleScope.launch {
+            try {
+                // Search for the exact word
+                val results = datamuseApi.findWords(spelledLike = word.lowercase(), max = 1)
+
+                wordSuggestions.clear()
+                if (results.isNotEmpty()) {
+                    val it = results[0]
+                    val rawDef = it.definitions?.firstOrNull() ?: "No definition found"
+                    val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
+                    wordSuggestions.add(it.word.uppercase() to definition)
+                } else {
+                    Toast.makeText(this@Letterly, "Word not found", Toast.LENGTH_SHORT).show()
+                }
+                wordAdapter.notifyDataSetChanged()
 
             } catch (e: Exception) {
                 Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
