@@ -12,9 +12,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:hint="Include Letter"
+        android:hint="Include"
         android:inputType="text"
         android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,"
+        android:textSize="11sp"
         android:textColor="@color/black"
         android:backgroundTint="@color/blue_200" />
 
@@ -23,9 +24,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:hint="Exclude Letters"
+        android:hint="Exclude"
         android:inputType="text"
         android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,"
+        android:textSize="11sp"
         android:textColor="@color/black"
         android:backgroundTint="@color/blue_200" />
 </LinearLayout>
