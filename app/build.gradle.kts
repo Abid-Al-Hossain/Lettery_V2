@@ -37,6 +37,13 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        jniLibs {
+            // This property aligns native libraries to 16 KB boundaries
+            // which is required for Android 15+ compatibility.
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
@@ -50,15 +57,19 @@ dependencies {
 
     // RecyclerView for displaying lists
     implementation("androidx.recyclerview:recyclerview:1.3.1")
-    implementation("com.google.code.gson:gson:2.10.1")
-    // Compose-related dependencies (if you're using Compose features)
+    
+    // Networking and JSON
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
+
+    // Compose-related dependencies
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.firebase.crashlytics.buildtools)
 
     // Testing dependencies
     testImplementation(libs.junit)

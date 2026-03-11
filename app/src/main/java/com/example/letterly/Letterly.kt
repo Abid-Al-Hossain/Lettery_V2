@@ -5,12 +5,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.Button
-import android.content.Context
-import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
-import com.google.gson.Gson
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class Letterly : AppCompatActivity() {
 
@@ -21,6 +21,8 @@ class Letterly : AppCompatActivity() {
     private val boxes = mutableListOf<Box>()
     private val wordSuggestions = mutableListOf<Pair<String, String>>() // Pair of Word and Meaning
 
+    private lateinit var datamuseApi: DatamuseApi
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_letterly)
@@ -30,6 +32,13 @@ class Letterly : AppCompatActivity() {
         val findWordsButton: Button = findViewById(R.id.findWordsButton)
         boxRecyclerView = findViewById(R.id.recyclerView)
         wordsRecyclerView = findViewById(R.id.wordsRecyclerView)
+
+        // Initialize Retrofit
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://api.datamuse.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        datamuseApi = retrofit.create(DatamuseApi::class.java)
 
         boxAdapter = BoxAdapter(boxes)
         boxRecyclerView.layoutManager = GridLayoutManager(this,2)
@@ -53,65 +62,79 @@ class Letterly : AppCompatActivity() {
         }
 
         findWordsButton.setOnClickListener {
-            val words = generateWordList()
-            wordSuggestions.clear()
-            wordSuggestions.addAll(words.toList())
-            wordAdapter.notifyDataSetChanged()
+            findWordsFromApi()
         }
     }
 
-    private fun loadDictionary(context: Context): Map<String, String> {
-        val inputStream = context.assets.open("dictionary.json")
-        val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-        val jsonString = bufferedReader.use { it.readText() }
-        val type = object : TypeToken<Map<String, String>>() {}.type
-        return Gson().fromJson(jsonString, type)
-    }
-
-
-
-
-    private fun generateWordList(): Map<String, String> {
-        val dictionary = loadDictionary(this)
-
-        // Sort the dictionary by meaning (value)
-        val sortedDictionary = dictionary.toList().sortedBy { (value, _) -> value }.toMap()
-
-        // Apply filters based on the boxes
-        val filteredWords = sortedDictionary.filter { (word, _) ->
-            // Ensure the word length matches the size of the boxes
-            if (word.length != boxes.size) {
-                return@filter false
-            }
-
-            // Iterate over each box and apply filters
-            boxes.indices.all { index ->
-                val box = boxes[index]
-                val letterAtPosition = word.getOrNull(index)?.toString()?.lowercase() ?: ""
-
-                // Check includeLetter condition (if it's not empty)
-                if (box.includeLetter.isNotEmpty()) {
-                    val includeLetters = box.includeLetter.split(',').map { it.trim().lowercase() }
-                    // Ensure the letter at this position is one of the includeLetters
-                    if (!includeLetters.contains(letterAtPosition)) {
-                        return@filter false
-                    }
-                }
-
-                // Check excludeLetters condition (if it's not empty)
-                if (box.excludeLetters.isNotEmpty()) {
-                    val excludeLetters = box.excludeLetters.split(',').map { it.trim().lowercase() }
-                    // Ensure the letter at this position is NOT one of the excludeLetters
-                    if (excludeLetters.contains(letterAtPosition)) {
-                        return@filter false
-                    }
-                }
-
-                true
-            }
+    private fun findWordsFromApi() {
+        if (boxes.isEmpty()) {
+            Toast.makeText(this, "Please add at least one box", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        return filteredWords
+        // Build the wildcard suffix: the "?" placeholder for each box after the first
+        // We'll make 26 calls (a??, b??, c?? etc.) so we get full alphabet coverage
+        val wordLength = boxes.size
+        val wildcardSuffix = "?".repeat(wordLength - 1) // e.g., for 3 boxes → "??"
+
+        lifecycleScope.launch {
+            try {
+                // Fire 26 parallel calls, one per starting letter, and merge results
+                val allResults = ('a'..'z').flatMap { startLetter ->
+                    val pattern = "$startLetter$wildcardSuffix" // e.g. "a??" for 3-letter words
+                    try {
+                        datamuseApi.findWords(spelledLike = pattern, max = 1000)
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                }
+
+                // Client-side filtering — identical to original local dictionary logic
+                val filteredResults = allResults.filter { dw ->
+                    val word = dw.word.lowercase()
+                    if (word.length != wordLength) return@filter false
+
+                    boxes.indices.all { index ->
+                        val box = boxes[index]
+                        val letterAtPos = word[index].toString()
+
+                        // Mirror original: includeLetter — position must match one of the listed letters
+                        if (box.includeLetter.isNotEmpty()) {
+                            val includeLetters = box.includeLetter.split(",").map { it.trim().lowercase() }
+                            if (!includeLetters.contains(letterAtPos)) return@all false
+                        }
+
+                        // Mirror original: excludeLetters — position must NOT match any listed letter
+                        if (box.excludeLetters.isNotEmpty()) {
+                            val excludeLetters = box.excludeLetters.split(",").map { it.trim().lowercase() }
+                            if (excludeLetters.contains(letterAtPos)) return@all false
+                        }
+
+                        true
+                    }
+                }
+
+                wordSuggestions.clear()
+                wordSuggestions.addAll(
+                    filteredResults
+                        .distinctBy { it.word } // remove duplicates from overlapping API results
+                        .sortedBy { it.word }    // alphabetical order, matching original JSON structure
+                        .map {
+                            val rawDef = it.definitions?.firstOrNull() ?: "No definition found"
+                            val definition = rawDef.replaceFirst(Regex("^[a-z]+\\t"), "")
+                            it.word.uppercase() to definition // uppercase to match original JSON keys
+                        }
+                )
+                wordAdapter.notifyDataSetChanged()
+
+                if (wordSuggestions.isEmpty()) {
+                    Toast.makeText(this@Letterly, "No matching words found", Toast.LENGTH_SHORT).show()
+                }
+
+            } catch (e: Exception) {
+                Toast.makeText(this@Letterly, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
 

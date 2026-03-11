@@ -1,67 +1,65 @@
-# Letterly - Word Suggestion App
+# Letterly V2 - Smart Word Suggestion App
 
 ## Overview
-Letterly is an Android-based application designed to provide users with dynamic word suggestions. Whether you're looking to improve your vocabulary, excel at word games, or enhance your writing, Letterly is here to inspire creativity, boost strategy, and support educational growth.
+Letterly V2 is an enhanced version of the original word-finding utility. It has been refactored to replace massive local dictionary files with a high-performance integration of the **Datamuse API**, making the app faster, significantly smaller, and more exhaustive in its search capabilities.
+
+## ✨ New in V2
+- **Cloud-Powered Search**: Integrates the Datamuse API for real-time, exhaustive word lookups.
+- **Memory Efficient**: Removed the 8.9MB local JSON dictionary, reducing the APK size and memory overhead.
+- **Improved Coverage**: Uses 26 parallel API calls to ensure valid matches across the entire alphabet for any word length.
+- **Live Definitions**: Modern, up-to-date word definitions fetched directly from the cloud.
 
 ## Features
-- **Dynamic Box Management**:
-  - Add or remove letter boxes based on the desired word size.
-- **Custom Letter Inputs**:
-  - Input multiple letters separated by commas for specific positions.
-  - Mark letters to exclude, ensuring they don't appear in specific positions.
-- **Real-Time Word Suggestions**:
-  - Instantly display words matching the defined letter positions and criteria.
-- **Error Notifications**:
-  - Alerts for incorrect inputs, such as entering letters without proper formatting.
+- **Dynamic Box Management**: Add or remove letter boxes based on the desired word size.
+- **Custom Letter Constraints**:
+  - **Inclusions**: Match specific letters at specific positions (supports multiple letters e.g. `a,e`).
+  - **Exclusions**: Blacklist forbidden letters for any position.
+- **Real-Time Validation**: Alerts for incorrect inputs and formatting issues.
+- **Alphabetical Sorting**: Results are presented in an easy-to-read uppercase, sorted list.
 
-## Why Choose Letterly?
-- **Enhances Creativity**:
-  - Supports poetry, writing, and wordplay.
-- **Boosts Strategy**:
-  - Offers an edge in competitive word games.
-- **Educational Benefits**:
-  - Improves vocabulary and strengthens spelling skills.
+## 🚀 Getting Started
 
-## How It Works
-1. Users input letters or criteria in dynamically adjustable boxes.
-2. Click the `Find Words` button to see matching suggestions based on:
-   - Exact matches.
-   - Position-based letter matching.
-3. Exclude specific letters or add multiple options using commas.
-4. Suggestions are displayed in real time for seamless interaction.
+### Prerequisites
+- [Android Studio Arctic Fox](https://developer.android.com/studio) or newer.
+- Android SDK 34+.
+- Internet connection (for API-based search).
 
-## Installation
-1. Clone this repository:
+### Installation & Run
+1. **Clone the repository**:
    ```bash
-   git clone https://github.com/DBP625/letterly.git
+   git clone https://github.com/Abid-Al-Hossain/Lettery_V2.git
    ```
-2. Open the project in Android Studio.
-3. Build and run the application on an emulator or physical device.
+2. **Open in Android Studio**:
+   - Launch Android Studio.
+   - Select **File > Open** and navigate to the cloned directory.
+3. **Sync Gradle**:
+   - Wait for the project to finish syncing. If prompted, click **"Sync Project with Gradle Files"**.
+4. **Run the App**:
+   - Connect an Android device or start an emulator.
+   - Click the green **Run** button in the toolbar.
+
+## 📊 Presentation
+You can find the project presentation file here:
+[Project Presentation (Final.pptx)](./App_Presentation_Media/Final.pptx)
+
+## Technical Stack
+- **Language**: Kotlin
+- **Networking**: Retrofit 2 + GSON
+- **Concurrecy**: Kotlin Coroutines + lifecycleScope
+- **Architecture**: Android Views + RecyclerView
 
 ## Contributions
-We welcome contributions! Follow these steps to contribute:
+We welcome contributions!
 1. Fork the repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature-name
-   ```
-3. Commit your changes:
-   ```bash
-   git commit -m "Add your message here"
-   ```
-4. Push to the branch:
-   ```bash
-   git push origin feature-name
-   ```
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
 5. Open a pull request.
 
-
 ## License
-This project is licensed under the [MIT License](LICENSE).
+Licensed under the [MIT License](LICENSE).
 
-## Contribution
-- **Denesh Barua Pantho**
+## Authors
 - **Abid Al Hossain Swakkhar**
+- **Denesh Barua Pantho**
 - **Fahad Bin Aziz Nabil**
----
-Thank you for using Letterly. Let’s make word exploration smarter and more fun!
