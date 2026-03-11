@@ -20,6 +20,15 @@ Letterly is a powerful Android dictionary and word-finding tool designed to help
 - **Resizable Interface**: Draggable divider for a custom-sized workspace.
 - **Improved Performance**: Consolidated UI logic for lightweight, high-speed word discovery.
 - **Cloud-Powered Vocabulary**: Millions of terms via real-time Datamuse API integration.
+## 📲 Download & Install
+You can download the latest pre-release version of Letterly directly to your Android device:
+
+*   **[Download Letterly_V2.apk](https://github.com/Abid-Al-Hossain/Lettery_V2/releases/download/v2.0.0/Letterly_V2.apk)**
+
+> [!NOTE]  
+> Since this is a pre-release APK, you may need to enable **"Install from Unknown Sources"** in your Android settings to complete the installation.
+
+---
 
 ## 🚀 Getting Started
 
